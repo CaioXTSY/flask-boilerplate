@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastro — Meu App{% endblock %}
+
+{% block content %}
+<section class="auth-form">
+  <h1>Criar conta</h1>
+  <form action="{{ url_for('auth.register') }}" method="post" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="form-group">
+      {{ form.username.label }}
+      {{ form.username(class="form-control", placeholder="Nome de usuário") }}
+      {% for error in form.username.errors %}
+        <span class="form-error">{{ error }}</span>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.email.label }}
+      {{ form.email(class="form-control", placeholder="seu@email.com") }}
+      {% for error in form.email.errors %}
+        <span class="form-error">{{ error }}</span>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.password.label }}
+      {{ form.password(class="form-control", placeholder="Mínimo 8 caracteres") }}
+      {% for error in form.password.errors %}
+        <span class="form-error">{{ error }}</span>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.password2.label }}
+      {{ form.password2(class="form-control", placeholder="Repita a senha") }}
+      {% for error in form.password2.errors %}
+        <span class="form-error">{{ error }}</span>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.submit(class="btn btn-primary btn-block") }}
+    </div>
+  </form>
+  <p class="auth-link">Já tem conta? <a href="{{ url_for('auth.login') }}">Faça login</a></p>
+</section>
+{% endblock %}

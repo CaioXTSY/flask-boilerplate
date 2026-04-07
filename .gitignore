@@ -62,8 +62,21 @@ db.sqlite3
 db.sqlite3-journal
 
 # Flask stuff:
-instance/
+instance/*
+!instance/.gitkeep
 .webassets-cache
+
+# App logs
+logs/*.log
+!logs/.gitkeep
+
+# SQLite databases
+*.sqlite
+*.sqlite3
+*.db
+
+# Migrations pycache
+migrations/versions/__pycache__/
 
 # Scrapy stuff:
 .scrapy
