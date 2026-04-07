@@ -1,32 +1,32 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}Meu App{% endblock %}</title>
+  <title>{% block title %}App{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   {% block head %}{% endblock %}
 </head>
 <body>
   <nav class="navbar">
     <div class="nav-brand">
-      <a href="{{ url_for('main.index') }}">Meu App</a>
+      <a href="{{ url_for('main.index') }}">App</a>
     </div>
     <ul class="nav-links">
       <li><a href="{{ url_for('main.index') }}">Home</a></li>
-      <li><a href="{{ url_for('main.about') }}">Sobre</a></li>
+      <li><a href="{{ url_for('main.about') }}">About</a></li>
       {% if config.DB_ENABLED %}
         {% if current_user.is_authenticated %}
           <li><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
           <li>
             <form action="{{ url_for('auth.logout') }}" method="post" style="display:inline;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <button type="submit" class="btn-link">Sair</button>
+              <button type="submit" class="btn-link">Sign out</button>
             </form>
           </li>
         {% else %}
-          <li><a href="{{ url_for('auth.login') }}">Login</a></li>
-          <li><a href="{{ url_for('auth.register') }}">Cadastro</a></li>
+          <li><a href="{{ url_for('auth.login') }}">Sign in</a></li>
+          <li><a href="{{ url_for('auth.register') }}">Register</a></li>
         {% endif %}
       {% endif %}
     </ul>
@@ -47,7 +47,7 @@
   </main>
 
   <footer class="footer">
-    <p>&copy; {{ now.year if now is defined else 2026 }} Meu App</p>
+    <p>&copy; {{ now.year if now is defined else 2026 }}</p>
   </footer>
 
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>

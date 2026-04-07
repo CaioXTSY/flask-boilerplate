@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard — Meu App{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
 <section class="dashboard">
   <h1>Dashboard</h1>
-  <p>Olá, <strong>{{ current_user.username }}</strong>! Você está autenticado.</p>
   <ul class="info-list">
-    <li><strong>E-mail:</strong> {{ current_user.email }}</li>
-    <li><strong>Membro desde:</strong> {{ current_user.created_at.strftime('%d/%m/%Y') }}</li>
+    <li><strong>Username:</strong> {{ current_user.username }}</li>
+    <li><strong>Email:</strong> {{ current_user.email }}</li>
+    <li><strong>Member since:</strong> {{ current_user.created_at.strftime('%Y-%m-%d') }}</li>
   </ul>
 </section>
 {% endblock %}

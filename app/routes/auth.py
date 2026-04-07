@@ -23,7 +23,7 @@ def register():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash("Conta criada com sucesso! Faça login.", "success")
+        flash("Account created. Please sign in.", "success")
         return redirect(url_for("auth.login"))
 
     return render_template("auth/register.html", form=form)
@@ -38,7 +38,7 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user is None or not user.check_password(form.password.data):
-            flash("E-mail ou senha inválidos.", "danger")
+            flash("Invalid email or password.", "danger")
             return redirect(url_for("auth.login"))
 
         login_user(user, remember=form.remember_me.data)
@@ -49,7 +49,6 @@ def login():
             if parsed.netloc != "":
                 next_page = None
 
-        flash(f"Bem-vindo, {user.username}!", "success")
         return redirect(next_page or url_for("main.index"))
 
     return render_template("auth/login.html", form=form)
@@ -59,5 +58,5 @@ def login():
 @login_required
 def logout():
     logout_user()
-    flash("Você saiu da sua conta.", "info")
+    flash("Signed out.", "info")
     return redirect(url_for("main.index"))
