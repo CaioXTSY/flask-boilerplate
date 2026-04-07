@@ -1,12 +1,9 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const alerts = document.querySelectorAll(".alert");
-  alerts.forEach(function (alert) {
+  document.querySelectorAll(".flash").forEach(function (el) {
     setTimeout(function () {
-      alert.style.transition = "opacity 0.5s ease";
-      alert.style.opacity = "0";
-      setTimeout(function () {
-        alert.remove();
-      }, 500);
+      el.style.transition = "opacity 0.5s ease";
+      el.style.opacity = "0";
+      setTimeout(function () { el.remove(); }, 500);
     }, 4000);
   });
 });

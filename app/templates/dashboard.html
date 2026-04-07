@@ -3,12 +3,19 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<section class="dashboard">
-  <h1>Dashboard</h1>
-  <ul class="info-list">
-    <li><strong>Username:</strong> {{ current_user.username }}</li>
-    <li><strong>Email:</strong> {{ current_user.email }}</li>
-    <li><strong>Member since:</strong> {{ current_user.created_at.strftime('%Y-%m-%d') }}</li>
-  </ul>
-</section>
+<h1 class="text-2xl font-bold mb-6">Dashboard</h1>
+<dl class="divide-y divide-gray-100 text-sm max-w-sm">
+  <div class="py-2 flex gap-4">
+    <dt class="font-medium text-gray-500 w-32">Username</dt>
+    <dd>{{ current_user.username }}</dd>
+  </div>
+  <div class="py-2 flex gap-4">
+    <dt class="font-medium text-gray-500 w-32">Email</dt>
+    <dd>{{ current_user.email }}</dd>
+  </div>
+  <div class="py-2 flex gap-4">
+    <dt class="font-medium text-gray-500 w-32">Member since</dt>
+    <dd>{{ current_user.created_at.strftime('%Y-%m-%d') }}</dd>
+  </div>
+</dl>
 {% endblock %}
