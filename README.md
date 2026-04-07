@@ -1,113 +1,286 @@
 # Flask Boilerplate
 
-Skeleton de aplicação Flask production-ready com autenticação, MySQL, migrations e testes.
+A production-ready Flask starter with authentication, multi-database support, migrations, structured logging, and a full test suite — ready to clone and build on.
 
-## Stack
+---
 
-- **Flask 3** — Application Factory + Blueprints
-- **SQLAlchemy 2 + Flask-Migrate** — ORM + migrations Alembic
-- **Flask-Login** — gerenciamento de sessão
-- **Flask-WTF** — formulários com validação e proteção CSRF
-- **PyMySQL** — driver MySQL puro-Python
-- **Gunicorn** — servidor WSGI para produção
-- **pytest** — suíte de testes
+## Features
 
-## Como rodar
+- **Application Factory** pattern with environment-based configuration
+- **Optional database** — the app boots and runs without any DB configured
+- **Multi-backend** — SQLite, MySQL, and PostgreSQL supported out of the box
+- **Authentication** — register, login, logout via Flask-Login with secure session cookies
+- **CSRF protection** on all forms via Flask-WTF
+- **Migrations** with Flask-Migrate (Alembic)
+- **Request ID** injected into every log line for distributed tracing
+- **Structured logging** with rotating file handler + stdout
+- **Error pages** for 403, 404, and 500 with automatic session rollback
+- **Tailwind CSS** via CDN, no build step required
+- **Docker** ready with a non-root user and gunicorn
 
-### 1. Clonar / criar diretório
+---
 
-```bash
-git clone <repo-url> meu_app
-cd meu_app
+## Tech Stack
+
+| Layer | Library |
+|---|---|
+| Web framework | Flask 3 |
+| ORM | SQLAlchemy 2 + Flask-SQLAlchemy |
+| Migrations | Flask-Migrate (Alembic) |
+| Auth | Flask-Login |
+| Forms & CSRF | Flask-WTF + WTForms |
+| MySQL driver | PyMySQL |
+| PostgreSQL driver | psycopg2-binary |
+| Password hashing | Werkzeug |
+| WSGI server | Gunicorn |
+| CSS | Tailwind CSS (CDN) |
+| Testing | pytest + pytest-flask |
+
+---
+
+## Project Structure
+
+```
+.
+├── app/
+│   ├── __init__.py              # Application factory — create_app()
+│   ├── extensions.py            # Extension instances (db, migrate, login_manager, csrf)
+│   ├── models/
+│   │   └── user.py              # User model + user_loader
+│   ├── forms/
+│   │   └── auth_forms.py        # LoginForm, RegisterForm
+│   ├── routes/
+│   │   ├── main.py              # Blueprint: /, /about, /dashboard
+│   │   └── auth.py              # Blueprint: /auth/register, /auth/login, /auth/logout
+│   ├── errors/
+│   │   └── handlers.py          # Global error handlers (403, 404, 500)
+│   ├── utils/
+│   │   ├── decorators.py        # db_login_required
+│   │   ├── logger.py            # RotatingFileHandler + request ID filter
+│   │   └── middleware.py        # before/after request hooks (timing, request ID)
+│   ├── templates/
+│   │   ├── base.html            # Base layout with nav, flash messages, footer
+│   │   ├── index.html
+│   │   ├── dashboard.html
+│   │   ├── about.html
+│   │   ├── auth/
+│   │   │   ├── login.html
+│   │   │   └── register.html
+│   │   └── errors/
+│   │       ├── 403.html
+│   │       ├── 404.html
+│   │       └── 500.html
+│   └── static/
+│       ├── css/style.css        # Custom overrides (Tailwind handles the rest)
+│       └── js/main.js           # Auto-dismiss flash messages
+├── tests/
+│   ├── conftest.py              # Fixtures: app, db, client, runner, auth_client
+│   ├── test_auth.py             # Auth flow tests
+│   └── test_main.py             # Route tests
+├── docs/
+│   ├── project-overview.md      # Architecture decisions and conventions
+│   ├── add-feature.md           # How to add a new feature module
+│   ├── database.md              # Database guide (models, migrations, backends)
+│   └── auth-and-security.md    # Auth and security patterns
+├── config.py                    # Config classes (Development, Testing, Production)
+├── run.py                       # Dev entry point
+├── wsgi.py                      # Production entry point (gunicorn)
+├── Dockerfile
+├── .env.example
+├── .flaskenv
+├── requirements.txt
+├── requirements-dev.txt
+└── pyproject.toml
 ```
 
-### 2. Criar ambiente virtual
+---
+
+## Getting Started
+
+### 1. Clone the repository
 
 ```bash
-# Linux / macOS
+git clone <repo-url> my-app
+cd my-app
+```
+
+### 2. Create a virtual environment
+
+```bash
+# macOS / Linux
 python -m venv .venv && source .venv/bin/activate
 
 # Windows
 python -m venv .venv && .venv\Scripts\activate
 ```
 
-### 3. Instalar dependências
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements-dev.txt
 ```
 
-### 4. Configurar variáveis de ambiente
+### 4. Configure environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-Edite o `.env` com as credenciais do banco MySQL **já existente**:
+Open `.env` and set at minimum:
 
-```
-SECRET_KEY=<gere com: python -c "import secrets; print(secrets.token_hex(32))">
-DATABASE_URL=mysql+pymysql://user:password@localhost:3306/meu_app?charset=utf8mb4
-```
-
-### 5. Banco de dados
-
-**Desenvolvimento** — as tabelas são criadas automaticamente no boot (`AUTO_CREATE_TABLES=True`). Nenhum comando adicional é necessário.
-
-**Produção** — use Flask-Migrate para versionar o schema:
-
-```bash
-flask db init
-flask db migrate -m "initial"
-flask db upgrade
+```env
+SECRET_KEY=        # generate one: python -c "import secrets; print(secrets.token_hex(32))"
+DATABASE_URL=      # see Database section below
 ```
 
-### 6. Rodar em desenvolvimento
+### 5. Run the development server
 
 ```bash
 flask run
-# ou
-python run.py
 ```
 
-Acesse: `http://localhost:5000`
+Visit `http://localhost:5000`.
 
-### 7. Rodar testes
+---
+
+## Database
+
+The database is **optional**. If `DATABASE_URL` is not set, the app runs without auth routes. Set it to enable authentication and the dashboard.
+
+### SQLite (no setup required)
+
+```env
+DATABASE_URL=sqlite:///instance/dev.db
+```
+
+In development, tables are created automatically on first boot (`AUTO_CREATE_TABLES=True`).
+
+### MySQL
+
+```env
+DATABASE_URL=mysql+pymysql://user:password@localhost:3306/dbname?charset=utf8mb4
+```
+
+### PostgreSQL
+
+```env
+DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/dbname
+```
+
+### Migrations (production)
 
 ```bash
+flask db init
+flask db migrate -m "initial schema"
+flask db upgrade
+```
+
+---
+
+## Configuration
+
+Configuration is class-based and selected via the `FLASK_ENV` environment variable.
+
+| `FLASK_ENV` | Class | Key Differences |
+|---|---|---|
+| `development` | `DevelopmentConfig` | `DEBUG=True`, SQLite fallback, auto-creates tables |
+| `testing` | `TestingConfig` | SQLite in-memory, CSRF disabled, logging suppressed |
+| `production` | `ProductionConfig` | `SECURE` cookies, `SECRET_KEY` required at boot |
+
+All classes inherit from `Config` which sets secure cookie defaults (`HttpOnly`, `SameSite=Lax`) for every environment. `Secure` is only enabled in production.
+
+---
+
+## Authentication
+
+| Route | Method | Description |
+|---|---|---|
+| `/auth/register` | GET, POST | Create a new account |
+| `/auth/login` | GET, POST | Sign in, supports `?next=` redirect |
+| `/auth/logout` | POST | Sign out (POST-only to prevent CSRF via link) |
+| `/dashboard` | GET | Protected — requires login |
+
+Auth routes are only registered when `DB_ENABLED=True`. Use `@db_login_required` (from `app/utils/decorators.py`) instead of bare `@login_required` on routes that should handle the no-database case gracefully.
+
+---
+
+## Testing
+
+```bash
+# Run all tests
 pytest
 
-# Com cobertura
+# With coverage report
 pytest --cov=app --cov-report=term-missing
 ```
 
-### 8. Rodar em produção
+Tests use an in-memory SQLite database and have CSRF disabled. Available fixtures:
+
+| Fixture | Scope | Description |
+|---|---|---|
+| `app` | session | App instance with tables created |
+| `db` | function | Clears all rows after each test |
+| `client` | function | Unauthenticated HTTP client |
+| `runner` | function | CLI test runner |
+| `auth_client` | function | HTTP client pre-logged in as `testuser` |
+
+---
+
+## Docker
 
 ```bash
-gunicorn -w 4 -b 0.0.0.0:8000 wsgi:app
+# Build
+docker build -t my-app .
+
+# Run
+docker run -p 8000:8000 \
+  -e SECRET_KEY=your-secret-key \
+  -e DATABASE_URL=postgresql+psycopg2://user:pass@host:5432/db \
+  -e FLASK_ENV=production \
+  my-app
 ```
 
-## Estrutura
+The container runs as a non-root user. Gunicorn is configured with 4 workers and logs to stdout/stderr.
 
-```
-app/
-├── __init__.py          # create_app() — application factory
-├── extensions.py        # db, migrate, login_manager, csrf
-├── models/user.py       # Modelo User com Flask-Login
-├── routes/
-│   ├── main.py          # Blueprint main (/, /dashboard, /about)
-│   └── auth.py          # Blueprint auth (/auth/login, /register, /logout)
-├── forms/auth_forms.py  # LoginForm, RegisterForm (Flask-WTF)
-├── errors/handlers.py   # Handlers globais 403/404/500
-├── utils/logger.py      # RotatingFileHandler
-└── templates/           # Jinja2 com herança de base.html
-config.py                # Config, Development, Testing, Production
-run.py                   # Entry point dev
-wsgi.py                  # Entry point produção (gunicorn)
-```
+---
 
-## Gerar SECRET_KEY segura
+## Development Tools
 
 ```bash
-python -c "import secrets; print(secrets.token_hex(32))"
+# Format
+black .
+
+# Lint
+ruff check .
+
+# Type check
+mypy app/
 ```
+
+Configuration for all three is in `pyproject.toml` (100-char line length, Python 3.11+).
+
+---
+
+## Adding Features
+
+See [docs/add-feature.md](docs/add-feature.md) for a step-by-step guide on adding new blueprints, models, forms, templates, and tests following this project's conventions.
+
+Other references:
+- [docs/project-overview.md](docs/project-overview.md) — architecture decisions and initialization order
+- [docs/database.md](docs/database.md) — models, migrations, and backend-specific behavior
+- [docs/auth-and-security.md](docs/auth-and-security.md) — auth flow, CSRF, cookie security
+
+---
+## Contributing
+
+1. Fork the repository
+2. Create a branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m "feat: add your feature"`
+4. Push to your fork: `git push origin feature/your-feature`
+5. Open a pull request
+
+---
+
+## License
+
+MIT
