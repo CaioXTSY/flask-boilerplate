@@ -12,6 +12,12 @@ _MYSQL_OPTIONS: dict = {
     "pool_pre_ping": True,
     "pool_recycle": 300,
 }
+_POSTGRES_OPTIONS: dict = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+    "pool_size": 5,
+    "max_overflow": 10,
+}
 
 
 def _engine_options(uri: str | None) -> dict:
@@ -21,6 +27,8 @@ def _engine_options(uri: str | None) -> dict:
         return _SQLITE_OPTIONS
     if "mysql" in uri:
         return _MYSQL_OPTIONS
+    if "postgresql" in uri or "postgres" in uri:
+        return _POSTGRES_OPTIONS
     return {}
 
 
