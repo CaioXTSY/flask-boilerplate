@@ -15,18 +15,19 @@
     <ul class="nav-links">
       <li><a href="{{ url_for('main.index') }}">Home</a></li>
       <li><a href="{{ url_for('main.about') }}">Sobre</a></li>
-      {% if current_user.is_authenticated %}
-        <li><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
-        <li>
-          <form action="{{ url_for('auth.logout') }}" method="post" style="display:inline;">
-            {{ csrf_token() | safe if not config.WTF_CSRF_ENABLED else '' }}
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <button type="submit" class="btn-link">Sair</button>
-          </form>
-        </li>
-      {% else %}
-        <li><a href="{{ url_for('auth.login') }}">Login</a></li>
-        <li><a href="{{ url_for('auth.register') }}">Cadastro</a></li>
+      {% if config.DB_ENABLED %}
+        {% if current_user.is_authenticated %}
+          <li><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+          <li>
+            <form action="{{ url_for('auth.logout') }}" method="post" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="btn-link">Sair</button>
+            </form>
+          </li>
+        {% else %}
+          <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+          <li><a href="{{ url_for('auth.register') }}">Cadastro</a></li>
+        {% endif %}
       {% endif %}
     </ul>
   </nav>

@@ -5,17 +5,35 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 
+_SQLITE_OPTIONS: dict = {
+    "connect_args": {"check_same_thread": False},
+}
+_MYSQL_OPTIONS: dict = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+}
+
+
+def _engine_options(uri: str | None) -> dict:
+    if not uri:
+        return {}
+    if uri.startswith("sqlite"):
+        return _SQLITE_OPTIONS
+    if "mysql" in uri:
+        return _MYSQL_OPTIONS
+    return {}
+
 
 class Config:
     SECRET_KEY: str = os.environ.get("SECRET_KEY") or "dev-key-change-me"
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
-    SQLALCHEMY_ENGINE_OPTIONS: dict = {
-        "pool_pre_ping": True,
-        "pool_recycle": 300,
-    }
     LOG_LEVEL: str = os.environ.get("LOG_LEVEL", "INFO")
     AUTO_CREATE_TABLES: bool = False
     WTF_CSRF_ENABLED: bool = True
+
+    SQLALCHEMY_DATABASE_URI: str | None = os.environ.get("DATABASE_URL")
+    DB_ENABLED: bool = SQLALCHEMY_DATABASE_URI is not None
+    SQLALCHEMY_ENGINE_OPTIONS: dict = _engine_options(SQLALCHEMY_DATABASE_URI)
 
     @staticmethod
     def init_app(app) -> None:
@@ -25,39 +43,40 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG: bool = True
     AUTO_CREATE_TABLES: bool = True
+    LOG_LEVEL: str = os.environ.get("LOG_LEVEL", "DEBUG")
+
     SQLALCHEMY_DATABASE_URI: str = os.environ.get(
         "DATABASE_URL",
-        "mysql+pymysql://root:password@localhost:3306/meu_app?charset=utf8mb4",
+        f"sqlite:///{BASE_DIR / 'instance' / 'dev.db'}",
     )
-    LOG_LEVEL: str = os.environ.get("LOG_LEVEL", "DEBUG")
+    DB_ENABLED: bool = True
+    SQLALCHEMY_ENGINE_OPTIONS: dict = _engine_options(SQLALCHEMY_DATABASE_URI)
 
 
 class TestingConfig(Config):
     TESTING: bool = True
     SQLALCHEMY_DATABASE_URI: str = "sqlite:///:memory:"
+    DB_ENABLED: bool = True
     WTF_CSRF_ENABLED: bool = False
     AUTO_CREATE_TABLES: bool = True
     SECRET_KEY: str = "testing-secret-key"
     LOG_LEVEL: str = "CRITICAL"
+    SQLALCHEMY_ENGINE_OPTIONS: dict = _engine_options("sqlite:///:memory:")
 
 
 class ProductionConfig(Config):
+    DEBUG: bool = False
+    TESTING: bool = False
+
+    SQLALCHEMY_DATABASE_URI: str | None = os.environ.get("DATABASE_URL")
+    DB_ENABLED: bool = SQLALCHEMY_DATABASE_URI is not None
+    SQLALCHEMY_ENGINE_OPTIONS: dict = _engine_options(SQLALCHEMY_DATABASE_URI)
+
     @classmethod
     def init_app(cls, app) -> None:
         Config.init_app(app)
-
-        secret_key = os.environ.get("SECRET_KEY")
-        database_url = os.environ.get("DATABASE_URL")
-
-        if not secret_key:
+        if not os.environ.get("SECRET_KEY"):
             raise RuntimeError("SECRET_KEY environment variable is not set.")
-        if not database_url:
-            raise RuntimeError("DATABASE_URL environment variable is not set.")
-
-    SECRET_KEY: str = os.environ.get("SECRET_KEY", "")
-    SQLALCHEMY_DATABASE_URI: str = os.environ.get("DATABASE_URL", "")
-    DEBUG: bool = False
-    TESTING: bool = False
 
 
 config: dict = {

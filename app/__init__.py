@@ -20,7 +20,7 @@ def create_app(config_name: str | None = None) -> Flask:
     _register_error_handlers(app)
     _configure_logging(app)
 
-    if app.config.get("AUTO_CREATE_TABLES"):
+    if app.config.get("DB_ENABLED") and app.config.get("AUTO_CREATE_TABLES"):
         from app.extensions import db as _db
 
         with app.app_context():
@@ -28,29 +28,43 @@ def create_app(config_name: str | None = None) -> Flask:
 
     @app.shell_context_processor
     def make_shell_context():
-        from app.extensions import db as _db
-        from app.models.user import User
+        ctx: dict = {}
+        if app.config.get("DB_ENABLED"):
+            from app.extensions import db as _db
+            from app.models.user import User
 
-        return {"db": _db, "User": User}
+            ctx.update({"db": _db, "User": User})
+        return ctx
 
     return app
 
 
 def _register_extensions(app: Flask) -> None:
-    from app.extensions import csrf, db, login_manager, migrate
+    from app.extensions import csrf, login_manager
 
-    db.init_app(app)
-    migrate.init_app(app, db)
-    login_manager.init_app(app)
     csrf.init_app(app)
+    login_manager.init_app(app)
+
+    if app.config.get("DB_ENABLED"):
+        from app.extensions import db, migrate
+
+        db.init_app(app)
+        migrate.init_app(app, db)
+
+        login_manager.login_view = "auth.login"
+    else:
+        login_manager.login_view = None
 
 
 def _register_blueprints(app: Flask) -> None:
-    from app.routes.auth import auth_bp
     from app.routes.main import main_bp
 
     app.register_blueprint(main_bp)
-    app.register_blueprint(auth_bp, url_prefix="/auth")
+
+    if app.config.get("DB_ENABLED"):
+        from app.routes.auth import auth_bp
+
+        app.register_blueprint(auth_bp, url_prefix="/auth")
 
 
 def _register_error_handlers(app: Flask) -> None:

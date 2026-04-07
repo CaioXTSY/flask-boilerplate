@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from flask import Blueprint, render_template
-from flask_login import login_required
+
+from app.utils.decorators import db_login_required
 
 main_bp = Blueprint("main", __name__)
 
@@ -12,7 +13,7 @@ def index():
 
 
 @main_bp.route("/dashboard")
-@login_required
+@db_login_required
 def dashboard():
     return render_template("dashboard.html")
 
