@@ -39,6 +39,11 @@ class Config:
     AUTO_CREATE_TABLES: bool = False
     WTF_CSRF_ENABLED: bool = True
 
+    SESSION_COOKIE_HTTPONLY: bool = True
+    SESSION_COOKIE_SAMESITE: str = "Lax"
+    REMEMBER_COOKIE_HTTPONLY: bool = True
+    REMEMBER_COOKIE_SAMESITE: str = "Lax"
+
     SQLALCHEMY_DATABASE_URI: str | None = os.environ.get("DATABASE_URL")
     DB_ENABLED: bool = SQLALCHEMY_DATABASE_URI is not None
     SQLALCHEMY_ENGINE_OPTIONS: dict = _engine_options(SQLALCHEMY_DATABASE_URI)
@@ -52,6 +57,9 @@ class DevelopmentConfig(Config):
     DEBUG: bool = True
     AUTO_CREATE_TABLES: bool = True
     LOG_LEVEL: str = os.environ.get("LOG_LEVEL", "DEBUG")
+
+    SESSION_COOKIE_SECURE: bool = False
+    REMEMBER_COOKIE_SECURE: bool = False
 
     SQLALCHEMY_DATABASE_URI: str = os.environ.get(
         "DATABASE_URL",
@@ -71,10 +79,16 @@ class TestingConfig(Config):
     LOG_LEVEL: str = "CRITICAL"
     SQLALCHEMY_ENGINE_OPTIONS: dict = _engine_options("sqlite:///:memory:")
 
+    SESSION_COOKIE_SECURE: bool = False
+    REMEMBER_COOKIE_SECURE: bool = False
+
 
 class ProductionConfig(Config):
     DEBUG: bool = False
     TESTING: bool = False
+
+    SESSION_COOKIE_SECURE: bool = True
+    REMEMBER_COOKIE_SECURE: bool = True
 
     SQLALCHEMY_DATABASE_URI: str | None = os.environ.get("DATABASE_URL")
     DB_ENABLED: bool = SQLALCHEMY_DATABASE_URI is not None
