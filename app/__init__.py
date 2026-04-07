@@ -19,6 +19,7 @@ def create_app(config_name: str | None = None) -> Flask:
     _register_blueprints(app)
     _register_error_handlers(app)
     _configure_logging(app)
+    _register_middleware(app)
 
     if app.config.get("DB_ENABLED") and app.config.get("AUTO_CREATE_TABLES"):
         from app.extensions import db as _db
@@ -78,3 +79,9 @@ def _configure_logging(app: Flask) -> None:
         from app.utils.logger import configure_logging
 
         configure_logging(app)
+
+
+def _register_middleware(app: Flask) -> None:
+    from app.utils.middleware import register_middleware
+
+    register_middleware(app)
