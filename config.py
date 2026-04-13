@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 
@@ -19,6 +20,8 @@ _POSTGRES_OPTIONS: dict = {
     "max_overflow": 10,
 }
 
+_INSECURE_DEFAULT_KEY = "dev-key-change-me"
+
 
 def _engine_options(uri: str | None) -> dict:
     if not uri:
@@ -33,7 +36,7 @@ def _engine_options(uri: str | None) -> dict:
 
 
 class Config:
-    SECRET_KEY: str = os.environ.get("SECRET_KEY") or "dev-key-change-me"
+    SECRET_KEY: str = os.environ.get("SECRET_KEY") or _INSECURE_DEFAULT_KEY
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
     LOG_LEVEL: str = os.environ.get("LOG_LEVEL", "INFO")
     AUTO_CREATE_TABLES: bool = False
@@ -68,6 +71,15 @@ class DevelopmentConfig(Config):
     DB_ENABLED: bool = True
     SQLALCHEMY_ENGINE_OPTIONS: dict = _engine_options(SQLALCHEMY_DATABASE_URI)
 
+    @staticmethod
+    def init_app(app) -> None:
+        Config.init_app(app)
+        if not os.environ.get("SECRET_KEY"):
+            logging.getLogger(__name__).warning(
+                "SECRET_KEY not set — using insecure default key. "
+                "Set SECRET_KEY env var before deploying."
+            )
+
 
 class TestingConfig(Config):
     TESTING: bool = True
@@ -98,7 +110,10 @@ class ProductionConfig(Config):
     def init_app(cls, app) -> None:
         Config.init_app(app)
         if not os.environ.get("SECRET_KEY"):
-            raise RuntimeError("SECRET_KEY environment variable is not set.")
+            raise RuntimeError(
+                "SECRET_KEY environment variable is not set. "
+                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
 
 
 config: dict = {

@@ -11,8 +11,13 @@ COPY . .
 
 RUN mkdir -p logs instance && chown -R app:app /app
 
+RUN chmod +x docker-entrypoint.sh
+
 USER app
 
 EXPOSE 8000
 
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "wsgi:app"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-8000}/health')" || exit 1
+
+ENTRYPOINT ["./docker-entrypoint.sh"]
