@@ -11,12 +11,13 @@ A production-ready Flask starter with authentication, multi-database support, mi
 - **Multi-backend** — SQLite, MySQL, and PostgreSQL supported out of the box
 - **Authentication** — register, login, logout via Flask-Login with secure session cookies
 - **CSRF protection** on all forms via Flask-WTF
-- **Migrations** with Flask-Migrate (Alembic)
+- **Migrations** with Flask-Migrate (Alembic) — directory pre-initialized, runs automatically on Docker startup
+- **Health check** endpoint at `/health` with optional database connectivity check
 - **Request ID** injected into every log line for distributed tracing
 - **Structured logging** with rotating file handler + stdout
 - **Error pages** for 403, 404, and 500 with automatic session rollback
 - **Tailwind CSS** via CDN, no build step required
-- **Docker** ready with a non-root user and gunicorn
+- **Docker** ready with non-root user, automatic migrations, HEALTHCHECK, and graceful shutdown
 
 ---
 
@@ -50,7 +51,7 @@ A production-ready Flask starter with authentication, multi-database support, mi
 │   ├── forms/
 │   │   └── auth_forms.py        # LoginForm, RegisterForm
 │   ├── routes/
-│   │   ├── main.py              # Blueprint: /, /about, /dashboard
+│   │   ├── main.py              # Blueprint: /, /about, /dashboard, /health
 │   │   └── auth.py              # Blueprint: /auth/register, /auth/login, /auth/logout
 │   ├── errors/
 │   │   └── handlers.py          # Global error handlers (403, 404, 500)
@@ -73,6 +74,8 @@ A production-ready Flask starter with authentication, multi-database support, mi
 │   └── static/
 │       ├── css/style.css        # Custom overrides (Tailwind handles the rest)
 │       └── js/main.js           # Auto-dismiss flash messages
+├── migrations/                  # Alembic migration files (pre-initialized)
+│   └── versions/                # Generated migration scripts go here
 ├── tests/
 │   ├── conftest.py              # Fixtures: app, db, client, runner, auth_client
 │   ├── test_auth.py             # Auth flow tests
@@ -83,9 +86,10 @@ A production-ready Flask starter with authentication, multi-database support, mi
 │   ├── database.md              # Database guide (models, migrations, backends)
 │   └── auth-and-security.md    # Auth and security patterns
 ├── config.py                    # Config classes (Development, Testing, Production)
-├── run.py                       # Dev entry point
+├── run.py                       # Dev entry point (respects FLASK_ENV)
 ├── wsgi.py                      # Production entry point (gunicorn)
 ├── Dockerfile
+├── docker-entrypoint.sh         # Runs migrations then starts gunicorn
 ├── .env.example
 ├── .flaskenv
 ├── requirements.txt
@@ -133,6 +137,8 @@ SECRET_KEY=        # generate one: python -c "import secrets; print(secrets.toke
 DATABASE_URL=      # see Database section below
 ```
 
+> **Note:** In development, if `SECRET_KEY` is not set, the app boots with an insecure default key and logs a warning. In production, startup fails immediately with an error if `SECRET_KEY` is missing.
+
 ### 5. Run the development server
 
 ```bash
@@ -167,13 +173,16 @@ DATABASE_URL=mysql+pymysql://user:password@localhost:3306/dbname?charset=utf8mb4
 DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/dbname
 ```
 
-### Migrations (production)
+### Migrations
+
+The `migrations/` directory is already initialized. To create and apply a new migration:
 
 ```bash
-flask db init
-flask db migrate -m "initial schema"
+flask db migrate -m "describe your change"
 flask db upgrade
 ```
+
+> **Docker:** Migrations run automatically on container startup via `docker-entrypoint.sh`. No manual step needed.
 
 ---
 
@@ -183,24 +192,58 @@ Configuration is class-based and selected via the `FLASK_ENV` environment variab
 
 | `FLASK_ENV` | Class | Key Differences |
 |---|---|---|
-| `development` | `DevelopmentConfig` | `DEBUG=True`, SQLite fallback, auto-creates tables |
+| `development` | `DevelopmentConfig` | `DEBUG=True`, SQLite fallback, auto-creates tables, warns if `SECRET_KEY` not set |
 | `testing` | `TestingConfig` | SQLite in-memory, CSRF disabled, logging suppressed |
-| `production` | `ProductionConfig` | `SECURE` cookies, `SECRET_KEY` required at boot |
+| `production` | `ProductionConfig` | `SECURE` cookies, raises `RuntimeError` at boot if `SECRET_KEY` missing |
 
 All classes inherit from `Config` which sets secure cookie defaults (`HttpOnly`, `SameSite=Lax`) for every environment. `Secure` is only enabled in production.
 
 ---
 
-## Authentication
+## Routes
+
+### Application routes
+
+| Route | Method | Description |
+|---|---|---|
+| `/` | GET | Home page |
+| `/about` | GET | About page |
+| `/dashboard` | GET | Protected — requires login |
+| `/health` | GET | Health check (see below) |
+
+### Auth routes
 
 | Route | Method | Description |
 |---|---|---|
 | `/auth/register` | GET, POST | Create a new account |
 | `/auth/login` | GET, POST | Sign in, supports `?next=` redirect |
 | `/auth/logout` | POST | Sign out (POST-only to prevent CSRF via link) |
-| `/dashboard` | GET | Protected — requires login |
 
 Auth routes are only registered when `DB_ENABLED=True`. Use `@db_login_required` (from `app/utils/decorators.py`) instead of bare `@login_required` on routes that should handle the no-database case gracefully.
+
+---
+
+## Health Check
+
+`GET /health` — returns JSON with the overall status and, when a database is configured, the result of a connectivity probe.
+
+**Healthy (200):**
+```json
+{ "status": "ok", "db": "ok" }
+```
+
+**Unhealthy — DB unreachable (503):**
+```json
+{ "status": "unhealthy", "db": "unreachable" }
+```
+
+When `DATABASE_URL` is not set, the response is simply `{ "status": "ok" }` (no `db` key).
+
+Use this endpoint for:
+- Docker `HEALTHCHECK` (already configured in `Dockerfile`)
+- Kubernetes liveness and readiness probes
+- Load balancer health checks
+- Uptime monitoring
 
 ---
 
@@ -240,7 +283,21 @@ docker run -p 8000:8000 \
   my-app
 ```
 
-The container runs as a non-root user. Gunicorn is configured with 4 workers and logs to stdout/stderr.
+### What happens on startup
+
+1. If `DATABASE_URL` is set, `flask db upgrade` runs automatically before the server starts
+2. Gunicorn starts with graceful shutdown support (`--graceful-timeout 30`)
+3. Docker's built-in `HEALTHCHECK` polls `/health` every 30 seconds
+
+### Optional environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `GUNICORN_WORKERS` | `4` | Number of Gunicorn worker processes |
+| `PORT` | `8000` | Port the server listens on |
+| `GUNICORN_TIMEOUT` | `120` | Worker timeout in seconds |
+
+The container runs as a non-root user. Logs go to stdout/stderr.
 
 ---
 
@@ -271,6 +328,7 @@ Other references:
 - [docs/auth-and-security.md](docs/auth-and-security.md) — auth flow, CSRF, cookie security
 
 ---
+
 ## Contributing
 
 1. Fork the repository
