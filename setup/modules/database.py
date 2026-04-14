@@ -33,9 +33,9 @@ class DatabaseModule(FeatureModule):
         state.db_backend = backend
 
         if backend in ("mysql", "postgresql"):
-            default_port = "3306" if backend == "mysql" else "5432"
+            default_port = 3306 if backend == "mysql" else 5432
             state.db_host = cli.prompt("Host", default="localhost")
-            state.db_port = cli.prompt("Port", default=default_port)
+            state.db_port = str(cli.prompt_int("Port", default=default_port, min_val=1, max_val=65535))
             state.db_name = cli.prompt("Database name", default="app")
             state.db_user = cli.prompt("User", default="app")
             state.db_password = cli.prompt("Password", default="", secret=True)

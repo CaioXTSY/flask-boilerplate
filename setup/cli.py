@@ -117,6 +117,25 @@ class CLI:
                 return options[int(raw) - 1][1]
             print(f"  {WARN_S} {YELLOW}Enter a number between 1 and {len(options)}.{RESET}")
 
+    def prompt_int(
+        self,
+        question: str,
+        default: int,
+        min_val: int = 1,
+        max_val: int = 65535,
+    ) -> int:
+        """Like prompt(), but validates and returns an integer."""
+        def _validate(value: str) -> str | None:
+            if not value.isdigit():
+                return f"Must be a number (got: {value!r})"
+            n = int(value)
+            if not (min_val <= n <= max_val):
+                return f"Must be between {min_val} and {max_val}"
+            return None
+
+        raw = self.prompt(question, default=str(default), validator=_validate)
+        return int(raw)
+
     def confirm(self, question: str, default: bool = True) -> bool:
         hint = f"[{BOLD}Y{RESET}/n]" if default else f"[y/{BOLD}N{RESET}]"
         try:

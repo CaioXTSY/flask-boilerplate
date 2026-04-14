@@ -50,7 +50,14 @@ class CICDModule(FeatureModule):
     def ask(self, state, cli) -> None:
         state.use_cicd = cli.confirm("Generate GitHub Actions CI workflow?", default=False)
         if state.use_cicd:
-            state.ci_python_version = cli.prompt("Python version", default="3.12")
+            import re
+            def _validate_pyver(v: str) -> str | None:
+                if not re.match(r"^\d+\.\d+$", v):
+                    return f"Use format MAJOR.MINOR (e.g. 3.12), got: {v!r}"
+                return None
+            state.ci_python_version = cli.prompt(
+                "Python version", default="3.12", validator=_validate_pyver
+            )
 
     def plan(self, state) -> list[str]:
         if not state.use_cicd:

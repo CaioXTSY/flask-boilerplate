@@ -23,7 +23,7 @@ class EmailSupportModule(FeatureModule):
         state.use_email = cli.confirm("Add email support (Flask-Mail)?", default=False)
         if state.use_email:
             state.mail_server = cli.prompt("Mail server", default="localhost")
-            state.mail_port = int(cli.prompt("Mail port", default="1025"))
+            state.mail_port = cli.prompt_int("Mail port", default=1025, min_val=1, max_val=65535)
 
     def plan(self, state) -> list[str]:
         if not state.use_email:
