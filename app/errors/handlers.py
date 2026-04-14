@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from flask import Blueprint, render_template
-
-from app.extensions import db
+from flask import Blueprint, current_app, render_template
 
 errors_bp = Blueprint("errors", __name__)
 
@@ -19,5 +17,7 @@ def not_found(error):
 
 @errors_bp.app_errorhandler(500)
 def internal_error(error):
-    db.session.rollback()
+    if current_app.config.get("DB_ENABLED"):
+        from app.extensions import db
+        db.session.rollback()
     return render_template("errors/500.html"), 500

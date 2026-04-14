@@ -32,19 +32,6 @@ def list_users():
     return jsonify({"users": [], "total": 0}), 200
 """
 
-_HEALTH_BLUEPRINT = """\
-from __future__ import annotations
-
-from flask import jsonify
-
-from app.routes.api.v1 import api_v1_bp
-
-
-@api_v1_bp.route("/health", methods=["GET"])
-def api_health():
-    return jsonify({"status": "ok"}), 200
-"""
-
 
 class APIModeModule(FeatureModule):
     name = "JSON API Blueprint"

@@ -51,6 +51,7 @@ class AuthenticationModule(FeatureModule):
             ROOT / "app" / "templates" / "index.html",
             ROOT / "app" / "routes" / "main.py",
             ROOT / "app" / "__init__.py",
+            ROOT / "app" / "utils" / "decorators.py",
             ROOT / "tests" / "conftest.py",
             ROOT / "requirements.txt",
         ]
@@ -137,6 +138,10 @@ class AuthenticationModule(FeatureModule):
                     continue
                 result.append(line)
             write_file(conftest, "".join(result))
+
+        # ── app/utils/decorators.py — only contains db_login_required (needs Flask-Login) ──
+        decorators = ROOT / "app" / "utils" / "decorators.py"
+        decorators.unlink(missing_ok=True)
 
         # ── requirements.txt ──────────────────────────────────────────────────
         requirements_remove(
