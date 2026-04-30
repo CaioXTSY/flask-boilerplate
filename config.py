@@ -23,6 +23,10 @@ _POSTGRES_OPTIONS: dict = {
 _INSECURE_DEFAULT_KEY = "dev-key-change-me"
 
 
+def _database_url() -> str | None:
+    return os.environ.get("DATABASE_URL") or None
+
+
 def _engine_options(uri: str | None) -> dict:
     if not uri:
         return {}
@@ -47,7 +51,7 @@ class Config:
     REMEMBER_COOKIE_HTTPONLY: bool = True
     REMEMBER_COOKIE_SAMESITE: str = "Lax"
 
-    SQLALCHEMY_DATABASE_URI: str | None = os.environ.get("DATABASE_URL")
+    SQLALCHEMY_DATABASE_URI: str | None = _database_url()
     DB_ENABLED: bool = SQLALCHEMY_DATABASE_URI is not None
     SQLALCHEMY_ENGINE_OPTIONS: dict = _engine_options(SQLALCHEMY_DATABASE_URI)
 
@@ -64,11 +68,8 @@ class DevelopmentConfig(Config):
     SESSION_COOKIE_SECURE: bool = False
     REMEMBER_COOKIE_SECURE: bool = False
 
-    SQLALCHEMY_DATABASE_URI: str = os.environ.get(
-        "DATABASE_URL",
-        f"sqlite:///{BASE_DIR / 'instance' / 'dev.db'}",
-    )
-    DB_ENABLED: bool = True
+    SQLALCHEMY_DATABASE_URI: str | None = _database_url()
+    DB_ENABLED: bool = SQLALCHEMY_DATABASE_URI is not None
     SQLALCHEMY_ENGINE_OPTIONS: dict = _engine_options(SQLALCHEMY_DATABASE_URI)
 
     @staticmethod
@@ -102,7 +103,7 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SECURE: bool = True
     REMEMBER_COOKIE_SECURE: bool = True
 
-    SQLALCHEMY_DATABASE_URI: str | None = os.environ.get("DATABASE_URL")
+    SQLALCHEMY_DATABASE_URI: str | None = _database_url()
     DB_ENABLED: bool = SQLALCHEMY_DATABASE_URI is not None
     SQLALCHEMY_ENGINE_OPTIONS: dict = _engine_options(SQLALCHEMY_DATABASE_URI)
 

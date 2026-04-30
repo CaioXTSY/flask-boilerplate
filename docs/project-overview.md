@@ -49,8 +49,8 @@ This order is load-bearing. Do not reorder.
 
 | `DATABASE_URL` | Environment | `DB_ENABLED` | Effect |
 |---|---|---|---|
-| absent | production | `False` | App boots, no auth routes |
-| `sqlite:///instance/dev.db` | development | `True` | SQLite fallback (default) |
+| absent or empty | any except testing | `False` | App boots, no auth routes |
+| `sqlite:///instance/dev.db` | development | `True` | SQLite database |
 | `sqlite:///:memory:` | testing | `True` | In-memory, isolated |
 | `mysql+pymysql://...` | any | `True` | Full MySQL |
 | `postgresql+psycopg2://...` | any | `True` | Full PostgreSQL |
@@ -67,7 +67,7 @@ When `DB_ENABLED=False`:
 
 ```
 Config (base)
-├── DevelopmentConfig   DEBUG=True, AUTO_CREATE_TABLES=True, SQLite default
+├── DevelopmentConfig   DEBUG=True, AUTO_CREATE_TABLES=True when DATABASE_URL is set
 ├── TestingConfig       TESTING=True, SQLite :memory:, CSRF disabled
 └── ProductionConfig    SESSION_COOKIE_SECURE=True, SECRET_KEY required
 ```

@@ -127,7 +127,8 @@ If you prefer to configure manually:
 cp .env.example .env
 ```
 
-Edit `.env` and set at minimum:
+Edit `.env` and set a `SECRET_KEY`. Set `DATABASE_URL` only if you want database-backed
+features such as authentication:
 
 ```env
 SECRET_KEY=<generate with: python -c "import secrets; print(secrets.token_hex(32))">
@@ -374,7 +375,7 @@ Configuration is class-based and selected via the `FLASK_ENV` environment variab
 
 | `FLASK_ENV` | Class | Key Differences |
 |---|---|---|
-| `development` | `DevelopmentConfig` | `DEBUG=True`, SQLite fallback, auto-creates tables, logs a warning if `SECRET_KEY` is not set |
+| `development` | `DevelopmentConfig` | `DEBUG=True`, optional DB via `DATABASE_URL`, auto-creates tables when DB is enabled, logs a warning if `SECRET_KEY` is not set |
 | `testing` | `TestingConfig` | SQLite in-memory, CSRF disabled, logging suppressed |
 | `production` | `ProductionConfig` | `SECURE` cookies, raises `RuntimeError` at boot if `SECRET_KEY` is missing |
 
@@ -480,7 +481,7 @@ flask db downgrade
 
 > **Docker:** `flask db upgrade` runs automatically on container startup via `docker-entrypoint.sh`. No manual step needed in containerized environments.
 
-In development, tables are also created automatically on first boot (`AUTO_CREATE_TABLES=True`), so you can start without running migrations.
+In development, when `DATABASE_URL` is set, tables are also created automatically on first boot (`AUTO_CREATE_TABLES=True`), so you can start without running migrations.
 
 ---
 
