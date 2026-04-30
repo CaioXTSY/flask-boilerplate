@@ -45,7 +45,7 @@ This order is load-bearing. Do not reorder.
 
 ## DB_ENABLED Flag
 
-`DB_ENABLED` is computed at class definition time from `DATABASE_URL` presence. It is static after `create_app()` runs.
+`DB_ENABLED` is computed at class definition time from a non-empty `DATABASE_URL`. It is static after `create_app()` runs.
 
 | `DATABASE_URL` | Environment | `DB_ENABLED` | Effect |
 |---|---|---|---|
